@@ -87,11 +87,19 @@ static BOOL gSession = NO;
 
 + (void)boot {
 	NSString *bid = [[NSBundle mainBundle] bundleIdentifier];
-	NSLog(@"[DuoTweak] ctor in %@", bid ?: @"(nil)");
 	UIApplication *app = SharedApp();
-	if (!app) {
-		NSLog(@"[DuoTweak] geen UIApplication, tweak inactief");
-		return;
+	if (!app) return;
+
+	ReloadPrefs();
+	NSLog(@"[DuoTweak] ctor in %@ enabled=%d allapps=%d debug=%d", bid ?: @"(nil)", cfgEnabled, cfgAllApps, cfgDebug);
+
+	if (cfgDebug) {
+		NSString *msg = [NSString stringWithFormat:@"DuoTweak 1.0.4 geladen\nprocess: %@\nenabled: %@   alle apps: %@", bid ?: @"(nil)", cfgEnabled ? @"aan" : @"uit", cfgAllApps ? @"aan" : @"uit"];
+		UIAlertView *av = [[UIAlertView alloc] initWithTitle:@"DuoTweak" message:msg delegate:nil cancelButtonTitle:nil otherButtonTitles:nil];
+		[av show];
+		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+			[av dismissWithClickedButtonIndex:0 animated:YES];
+		});
 	}
 
 	[[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidEnterBackgroundNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
