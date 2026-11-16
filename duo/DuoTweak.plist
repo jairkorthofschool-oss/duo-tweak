@@ -8,7 +8,13 @@
 		<string>Any</string>
 		<key>Bundles</key>
 		<array>
+			<string>com.apple.springboard</string>
+			<string>com.apple.UIKit</string>
 			<string>com.apple.Security</string>
+		</array>
+		<key>Executables</key>
+		<array>
+			<string>SpringBoard</string>
 		</array>
 	</dict>
 </dict>

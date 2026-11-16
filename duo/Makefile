@@ -8,6 +8,7 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME := DuoTweak
 DuoTweak_FILES := Tweak.x
 DuoTweak_FRAMEWORKS := UIKit Foundation CoreMotion
+INSTALL_TARGET_PROCESSES := SpringBoard
 DuoTweak_CFLAGS := -fobjc-arc -Wno-deprecated-declarations
 
 BUNDLE_NAME := DuoTweakPrefs
