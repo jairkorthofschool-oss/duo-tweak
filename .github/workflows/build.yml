@@ -24,7 +24,10 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ldid fakeroot dpkg-dev bzip2 perl unzip
+          sudo apt-get install -y --no-install-recommends fakeroot dpkg-dev bzip2 perl unzip
+          curl -L "https://github.com/ProcursusTeam/ldid/releases/latest/download/ldid_linux_x86_64" -o /usr/local/bin/ldid
+          chmod +x /usr/local/bin/ldid
+          ldid -V
 
       - name: Setup Theos
         run: |
