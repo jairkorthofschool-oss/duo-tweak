@@ -44,35 +44,31 @@ static UIApplication *SharedApp(void) {
 	}
 }
 
-static UIWindow *KeyWindow(void) {
+static UIWindow *BestWindow(void) {
 	UIApplication *app = SharedApp();
 	if (!app) return nil;
 
-	UIWindow *win = nil;
+	__block UIWindow *best = nil;
+	__block CGFloat bestArea = 0;
+
+	void (^consider)(UIWindow *) = ^(UIWindow *w) {
+		if (!w || w.hidden) return;
+		CGFloat area = w.frame.size.width * w.frame.size.height;
+		if (area > bestArea) { bestArea = area; best = w; }
+	};
 
 	for (UIScene *scene in app.connectedScenes) {
-		if (scene.activationState != UISceneActivationStateForegroundActive) continue;
 		if (![scene isKindOfClass:[UIWindowScene class]]) continue;
 		for (UIWindow *w in ((UIWindowScene *)scene).windows) {
-			if (w.isKeyWindow) win = w;
+			if (w.isKeyWindow || w.isFirstResponder || w.frame.size.width > 100) consider(w);
 		}
 	}
 
-	if (!win) {
-		for (UIWindow *w in app.windows) {
-			if (w.isKeyWindow) { win = w; break; }
-		}
+	if (!best) {
+		for (UIWindow *w in app.windows) consider(w);
 	}
 
-	if (!win) {
-		for (UIScene *scene in app.connectedScenes) {
-			if (![scene isKindOfClass:[UIWindowScene class]]) continue;
-			NSArray *ws = ((UIWindowScene *)scene).windows;
-			if (ws.count > 0) win = ws.firstObject;
-		}
-	}
-
-	return win;
+	return best;
 }
 
 @interface DuoEffectRunner : NSObject
@@ -82,6 +78,7 @@ static UIWindow *KeyWindow(void) {
 @implementation DuoEffectRunner
 
 static CMMotionManager *gMotion = nil;
+static UIWindow *gOverlay = nil;
 static UIView *gContainer = nil;
 static BOOL gSession = NO;
 
@@ -92,15 +89,6 @@ static BOOL gSession = NO;
 
 	ReloadPrefs();
 	NSLog(@"[DuoTweak] ctor in %@ enabled=%d allapps=%d debug=%d", bid ?: @"(nil)", cfgEnabled, cfgAllApps, cfgDebug);
-
-	if (cfgDebug) {
-		NSString *msg = [NSString stringWithFormat:@"DuoTweak 1.0.4 geladen\nprocess: %@\nenabled: %@   alle apps: %@", bid ?: @"(nil)", cfgEnabled ? @"aan" : @"uit", cfgAllApps ? @"aan" : @"uit"];
-		UIAlertView *av = [[UIAlertView alloc] initWithTitle:@"DuoTweak" message:msg delegate:nil cancelButtonTitle:nil otherButtonTitles:nil];
-		[av show];
-		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-			[av dismissWithClickedButtonIndex:0 animated:YES];
-		});
-	}
 
 	[[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidEnterBackgroundNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
 		[DuoEffectRunner endSession];
@@ -117,6 +105,42 @@ static BOOL gSession = NO;
 	}];
 	gMotion = motion;
 	NSLog(@"[DuoTweak] motion updates gestart");
+}
+
++ (UIWindow *)prepareOverlay {
+	UIWindow *w = gOverlay;
+	if (!w) {
+		UIWindow *src = BestWindow();
+		CGRect f = (src && src.frame.size.width > 100) ? src.frame : [UIScreen mainScreen].bounds;
+		w = [[UIWindow alloc] initWithFrame:f];
+		if (!w) return nil;
+		if (src.windowScene) {
+			w.windowScene = src.windowScene;
+		}
+		w.windowLevel = 99999.0;
+		w.userInteractionEnabled = NO;
+		w.backgroundColor = [UIColor clearColor];
+		w.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+		w.hidden = NO;
+		gOverlay = w;
+	} else {
+		w.hidden = NO;
+	}
+	return w;
+}
+
++ (void)flash:(UIColor *)color inWindow:(UIWindow *)w {
+	if (!cfgDebug || !w) return;
+	UIView *bar = [[UIView alloc] initWithFrame:CGRectMake(0, 40, w.bounds.size.width, 14)];
+	bar.backgroundColor = color;
+	bar.alpha = 0.95;
+	bar.layer.cornerRadius = 7;
+	[w addSubview:bar];
+	[UIView animateWithDuration:0.8 delay:1.2 options:0 animations:^{
+		bar.alpha = 0.0;
+	} completion:^(BOOL finished) {
+		[bar removeFromSuperview];
+	}];
 }
 
 + (void)handleMotion:(CMDeviceMotion *)motion {
@@ -150,25 +174,21 @@ static BOOL gSession = NO;
 	ReloadPrefs();
 	if (!EffectActive()) return;
 
-	UIWindow *window = KeyWindow();
-	if (!window) return;
+	UIWindow *overlay = [self prepareOverlay];
+	if (!overlay) return;
 
-	UIView *snap = [window snapshotViewAfterScreenUpdates:NO];
-	if (!snap) return;
+	[self flash:[UIColor colorWithRed:0.0 green:0.4 blue:1.0 alpha:1.0] inWindow:overlay];
 
-	CGFloat bw = window.bounds.size.width;
-	CGFloat bh = window.bounds.size.height;
+	UIWindow *src = BestWindow();
+	UIView *snap = src ? [src snapshotViewAfterScreenUpdates:NO] : nil;
+
+	CGFloat bw = overlay.bounds.size.width;
+	CGFloat bh = overlay.bounds.size.height;
 
 	UIView *container = [[UIView alloc] initWithFrame:CGRectMake(0, 0, bw, bh)];
 	container.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	container.userInteractionEnabled = NO;
 	container.transform = CGAffineTransformMakeRotation(angle);
-
-	UIView *bg = [window snapshotViewAfterScreenUpdates:NO];
-	bg.frame = CGRectMake(0, 0, bw, bh);
-	bg.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-	bg.userInteractionEnabled = NO;
-	[container addSubview:bg];
 
 	UIVisualEffectView *blur = [[UIVisualEffectView alloc] initWithEffect:nil];
 	blur.frame = CGRectMake(0, 0, bw, bh);
@@ -176,51 +196,46 @@ static BOOL gSession = NO;
 	blur.userInteractionEnabled = NO;
 	[container addSubview:blur];
 
-	UIView *wrap = [[UIView alloc] initWithFrame:CGRectMake(0, 0, bw, bh)];
-	wrap.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-	wrap.userInteractionEnabled = NO;
-	wrap.layer.cornerRadius = 46;
-	wrap.layer.shadowColor = [UIColor blackColor].CGColor;
-	wrap.layer.shadowOpacity = 0.45;
-	wrap.layer.shadowRadius = 30;
-	wrap.layer.shadowOffset = CGSizeMake(0, 6);
-	wrap.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, bw, bh) cornerRadius:46].CGPath;
+	if (snap) {
+		UIView *wrap = [[UIView alloc] initWithFrame:CGRectMake(0, 0, bw, bh)];
+		wrap.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+		wrap.userInteractionEnabled = NO;
+		wrap.layer.cornerRadius = 46;
+		wrap.layer.shadowColor = [UIColor blackColor].CGColor;
+		wrap.layer.shadowOpacity = 0.45;
+		wrap.layer.shadowRadius = 30;
+		wrap.layer.shadowOffset = CGSizeMake(0, 6);
+		wrap.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, bw, bh) cornerRadius:46].CGPath;
 
-	UIView *floatSnap = [window snapshotViewAfterScreenUpdates:NO];
-	floatSnap.frame = wrap.bounds;
-	floatSnap.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-	floatSnap.layer.cornerRadius = 46;
-	floatSnap.layer.masksToBounds = YES;
-	floatSnap.userInteractionEnabled = NO;
-	[wrap addSubview:floatSnap];
+		UIView *floatSnap = [src snapshotViewAfterScreenUpdates:NO];
+		floatSnap.frame = wrap.bounds;
+		floatSnap.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+		floatSnap.layer.cornerRadius = 46;
+		floatSnap.layer.masksToBounds = YES;
+		floatSnap.userInteractionEnabled = NO;
+		[wrap addSubview:floatSnap];
 
-	[container addSubview:wrap];
-	[window addSubview:container];
+		[container addSubview:wrap];
+
+		CGFloat s = cfgShrink ? 0.9 : 1.0;
+		CGFloat tw = bw * s;
+		CGFloat th = bh * s;
+		[UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+			wrap.frame = CGRectMake((bw - tw) / 2.0, (bh - th) / 2.0, tw, th);
+			wrap.layer.cornerRadius = 40;
+			wrap.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, tw, th) cornerRadius:40].CGPath;
+		} completion:nil];
+	}
+
+	[overlay addSubview:container];
 	gContainer = container;
 	gSession = YES;
-
-	NSLog(@"[DuoTweak] sessie gestart in %@ (angle=%.1f)", [[NSBundle mainBundle] bundleIdentifier] ?: @"(nil)", angle * 180.0 / M_PI);
-
-	if (cfgDebug) {
-		UIView *dot = [[UIView alloc] initWithFrame:CGRectMake(bw / 2.0 - 40.0, 60.0, 80.0, 10.0)];
-		dot.backgroundColor = [UIColor colorWithRed:0.1 green:0.85 blue:0.3 alpha:1.0];
-		dot.layer.cornerRadius = 5.0;
-		[window addSubview:dot];
-		[UIView animateWithDuration:0.9 delay:0.5 options:0 animations:^{ dot.alpha = 0.0; } completion:^(BOOL finished) { [dot removeFromSuperview]; }];
-	}
 
 	[UIView animateWithDuration:0.18 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
 		blur.effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial];
 	} completion:nil];
 
-	CGFloat s = cfgShrink ? 0.9 : 1.0;
-	CGFloat tw = bw * s;
-	CGFloat th = bh * s;
-	[UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
-		wrap.frame = CGRectMake((bw - tw) / 2.0, (bh - th) / 2.0, tw, th);
-		wrap.layer.cornerRadius = 40;
-		wrap.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, tw, th) cornerRadius:40].CGPath;
-	} completion:nil];
+	[self flash:[UIColor colorWithRed:0.1 green:0.85 blue:0.3 alpha:1.0] inWindow:overlay];
 }
 
 + (void)endSession {
@@ -228,12 +243,16 @@ static BOOL gSession = NO;
 	gSession = NO;
 	UIView *container = gContainer;
 	gContainer = nil;
-	if (!container) return;
-	[UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionCurveEaseIn animations:^{
-		container.alpha = 0.0;
-	} completion:^(BOOL finished) {
-		[container removeFromSuperview];
-	}];
+	if (container) {
+		[UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionCurveEaseIn animations:^{
+			container.alpha = 0.0;
+		} completion:^(BOOL finished) {
+			[container removeFromSuperview];
+		}];
+	}
+	if (gOverlay) {
+		gOverlay.hidden = YES;
+	}
 }
 
 @end

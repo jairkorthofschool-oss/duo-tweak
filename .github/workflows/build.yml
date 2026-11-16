@@ -52,6 +52,10 @@ jobs:
           echo "SDK_VER=$SDK_VER" >> "$GITHUB_ENV"
           "$HOME/theos/toolchain/linux/iphone/bin/clang" --version | head -1
 
+      - name: Convert filter plist to binary format
+        run: |
+          python3 -c "import plistlib; p='duo/DuoTweak.plist'; d=plistlib.load(open(p,'rb')); plistlib.dump(d, open(p,'wb'), fmt=plistlib.FMT_BINARY)"
+
       - name: Build package
         env:
           THEOS: /home/runner/theos
