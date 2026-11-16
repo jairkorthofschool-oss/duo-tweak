@@ -1,8 +1,16 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import <stdlib.h>
+#import <spawn.h>
 #import <Preferences/PSListController.h>
 #import <Preferences/PSSpecifier.h>
+
+extern char **environ;
+
+static void RunKillall(void) {
+	pid_t pid;
+	const char *argv[] = {"/usr/bin/killall", "SpringBoard", NULL};
+	posix_spawn(&pid, argv[0], NULL, NULL, (char *const *)argv, environ);
+}
 
 @interface DuoTweakPrefsListController : PSListController
 @end
@@ -65,7 +73,7 @@
 
 - (void)doRespring:(PSSpecifier *)spec {
 	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.4 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-		system("killall SpringBoard");
+		RunKillall();
 	});
 }
 
