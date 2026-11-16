@@ -12,7 +12,7 @@
 		<key>header</key>
 		<string>Duo Effect</string>
 		<key>footerText</key>
-		<string>Houd je iPhone recht voor het normale beeld. Tijdens het draaien krijg je het duo-effect: het scherm vervaagt en blijft rechtop zweven.</string>
+		<string>Kantel je telefoon en het beeld blijft naar je toe gericht (3D hologram-effect). Zet je telefoon weer rechtop en alles is normaal.</string>
 	</dict>
 	<dict>
 		<key>cell</key>
@@ -47,48 +47,8 @@
 	<dict>
 		<key>cell</key>
 		<string>PSGroupCell</string>
-	</dict>
-	<dict>
-		<key>cell</key>
-		<string>PSSwitchCell</string>
-		<key>label</key>
-		<string>Zwevend scherm (krimpen)</string>
-		<key>key</key>
-		<string>shrink</string>
-		<key>default</key>
-		<true/>
-		<key>defaults</key>
-		<string>nl.jair.duotweak</string>
-	</dict>
-	<dict>
-		<key>cell</key>
-		<string>PSGroupCell</string>
 		<key>footerText</key>
-		<string>Test-modus: toont een groene balk bovenin zodra het effect start. Zet dit uit zodra alles werkt.</string>
-	</dict>
-	<dict>
-		<key>cell</key>
-		<string>PSSwitchCell</string>
-		<key>label</key>
-		<string>Debug-indicator (test)</string>
-		<key>key</key>
-		<string>debug</string>
-		<key>default</key>
-		<true/>
-		<key>defaults</key>
-		<string>nl.jair.duotweak</string>
-	</dict>
-	<dict>
-		<key>cell</key>
-		<string>PSGroupCell</string>
-		<key>footerText</key>
-		<string>Onderaan deze pagina staat automatisch de diagnose. Typ die tekst over aan mij in de chat - dan weet ik precies wat er aan de hand is.</string>
-	</dict>
-	<dict>
-		<key>cell</key>
-		<string>PSGroupCell</string>
-		<key>footerText</key>
-		<string>Duo Tweak 1.0.9 - gemaakt door jairkorthofschool-oss</string>
+		<string>Duo Tweak 1.1.0 - gemaakt door jairkorthofschool-oss</string>
 	</dict>
 	</array>
 </dict>
