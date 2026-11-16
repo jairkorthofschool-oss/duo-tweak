@@ -6,6 +6,7 @@
 #define PREF_DOMAIN CFSTR("nl.jair.duotweak")
 #define TILT_ON_DEG 8.0
 #define TILT_OFF_DEG 4.0
+#define EFFECT_STRENGTH 5.0
 
 static BOOL cfgEnabled = YES;
 static BOOL cfgAllApps = NO;
@@ -142,7 +143,7 @@ static CMMotionManager *gMotion = nil;
 	CATransform3D t = CATransform3DIdentity;
 	t = CATransform3DTranslate(t, 0, bh / 2.0, 0);
 	t.m34 = -1.0 / 700.0;
-	t = CATransform3DRotate(t, -theta, 1.0, 0.0, 0.0);
+	t = CATransform3DRotate(t, -theta * EFFECT_STRENGTH, 1.0, 0.0, 0.0);
 	t = CATransform3DTranslate(t, 0, -bh / 2.0, 0);
 
 	w.layer.transform = t;
