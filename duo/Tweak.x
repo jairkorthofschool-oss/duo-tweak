@@ -102,7 +102,7 @@ static BOOL gSession = NO;
 }
 
 + (void)handleMotion:(CMDeviceMotion *)motion {
-	CGVector g = motion.gravity;
+	CMAcceleration g = motion.gravity;
 	CGFloat angle = atan2(g.x, -g.y);
 	CGFloat deg = fabs(angle) * 180.0 / M_PI;
 
