@@ -10,6 +10,8 @@
 		<string>Duo Tweak</string>
 		<key>bundle</key>
 		<string>DuoTweakPrefs</string>
+		<key>detail</key>
+		<string>DuoTweakPrefsListController</string>
 		<key>isController</key>
 		<true/>
 	</dict>
