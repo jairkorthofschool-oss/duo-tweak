@@ -64,7 +64,25 @@
 		<key>cell</key>
 		<string>PSGroupCell</string>
 		<key>footerText</key>
-		<string>Duo Tweak 1.0.2 - gemaakt door jairkorthofschool-oss</string>
+		<string>Test-modus: toont een groene balk bovenin zodra het effect start. Zet dit uit zodra alles werkt.</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSSwitchCell</string>
+		<key>label</key>
+		<string>Debug-indicator (test)</string>
+		<key>key</key>
+		<string>debug</string>
+		<key>default</key>
+		<true/>
+		<key>defaults</key>
+		<string>nl.jair.duotweak</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSGroupCell</string>
+		<key>footerText</key>
+		<string>Duo Tweak 1.0.3 - gemaakt door jairkorthofschool-oss</string>
 	</dict>
 	</array>
 </dict>

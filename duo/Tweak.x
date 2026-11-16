@@ -9,6 +9,7 @@
 static BOOL cfgEnabled = YES;
 static BOOL cfgAllApps = NO;
 static BOOL cfgShrink = YES;
+static BOOL cfgDebug = YES;
 
 static BOOL ReadBool(CFStringRef key, BOOL fallback) {
 	CFTypeRef v = CFPreferencesCopyAppValue(key, PREF_DOMAIN);
@@ -23,6 +24,7 @@ static void ReloadPrefs(void) {
 	cfgEnabled = ReadBool(CFSTR("enabled"), YES);
 	cfgAllApps = ReadBool(CFSTR("allapps"), NO);
 	cfgShrink  = ReadBool(CFSTR("shrink"), YES);
+	cfgDebug   = ReadBool(CFSTR("debug"), YES);
 }
 
 static BOOL IsSpringBoard(void) {
@@ -84,8 +86,13 @@ static UIView *gContainer = nil;
 static BOOL gSession = NO;
 
 + (void)boot {
+	NSString *bid = [[NSBundle mainBundle] bundleIdentifier];
+	NSLog(@"[DuoTweak] ctor in %@", bid ?: @"(nil)");
 	UIApplication *app = SharedApp();
-	if (!app) return;
+	if (!app) {
+		NSLog(@"[DuoTweak] geen UIApplication, tweak inactief");
+		return;
+	}
 
 	[[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidEnterBackgroundNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
 		[DuoEffectRunner endSession];
@@ -94,11 +101,14 @@ static BOOL gSession = NO;
 	CMMotionManager *motion = [[CMMotionManager alloc] init];
 	motion.deviceMotionUpdateInterval = 1.0 / 60.0;
 	[motion startDeviceMotionUpdatesToQueue:[NSOperationQueue mainQueue] withHandler:^(CMDeviceMotion *m, NSError *err) {
-		if (!err) {
-			[DuoEffectRunner handleMotion:m];
+		if (err) {
+			NSLog(@"[DuoTweak] motion fout: %@", err);
+			return;
 		}
+		[DuoEffectRunner handleMotion:m];
 	}];
 	gMotion = motion;
+	NSLog(@"[DuoTweak] motion updates gestart");
 }
 
 + (void)handleMotion:(CMDeviceMotion *)motion {
@@ -180,6 +190,16 @@ static BOOL gSession = NO;
 	[window addSubview:container];
 	gContainer = container;
 	gSession = YES;
+
+	NSLog(@"[DuoTweak] sessie gestart in %@ (angle=%.1f)", [[NSBundle mainBundle] bundleIdentifier] ?: @"(nil)", angle * 180.0 / M_PI);
+
+	if (cfgDebug) {
+		UIView *dot = [[UIView alloc] initWithFrame:CGRectMake(bw / 2.0 - 40.0, 60.0, 80.0, 10.0)];
+		dot.backgroundColor = [UIColor colorWithRed:0.1 green:0.85 blue:0.3 alpha:1.0];
+		dot.layer.cornerRadius = 5.0;
+		[window addSubview:dot];
+		[UIView animateWithDuration:0.9 delay:0.5 options:0 animations:^{ dot.alpha = 0.0; } completion:^(BOOL finished) { [dot removeFromSuperview]; }];
+	}
 
 	[UIView animateWithDuration:0.18 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
 		blur.effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial];
