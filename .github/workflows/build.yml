@@ -30,7 +30,10 @@ jobs:
 
       - name: Setup Theos
         run: |
+          sudo apt-get install -y --no-install-recommends libtinfo6 || sudo apt-get install -y --no-install-recommends libncurses6 || true
           git clone --recursive --depth 1 https://github.com/theos/theos.git "$HOME/theos"
+          curl -sL "https://github.com/L1ghtmann/llvm-project/releases/latest/download/iOSToolchain-x86_64.tar.xz" | tar -xJ -C "$HOME/theos/toolchain/"
+          test -x "$HOME/theos/toolchain/linux/iphone/bin/clang"
           curl -L "https://github.com/theos/sdks/archive/refs/heads/master.zip" -o /tmp/sdks.zip
           unzip -q /tmp/sdks.zip -d /tmp
           SDK_DIR=$(ls -d /tmp/sdks-master/iPhoneOS*.sdk | sort -V | tail -1)
@@ -39,6 +42,7 @@ jobs:
           mv "$SDK_DIR" "$HOME/theos/sdks/"
           SDK_VER=$(basename "$SDK_DIR" .sdk | sed 's/iPhoneOS//')
           echo "SDK_VER=$SDK_VER" >> "$GITHUB_ENV"
+          "$HOME/theos/toolchain/linux/iphone/bin/clang" --version | head -1
 
       - name: Build package
         env:
