@@ -59,7 +59,7 @@ jobs:
           cd repo
           dpkg-scanpackages --multiversion debs > Packages
           gzip -9fn -k Packages
-          bzip2 -9fn -k Packages
+          bzip2 -9 -f -k Packages
           bash ../scripts/gen-release.sh > Release
           ls -la
 
