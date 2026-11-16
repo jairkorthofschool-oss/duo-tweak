@@ -1,0 +1,12 @@
+Package: nl.jair.duotweak
+Name: Duo Tweak
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Maintainer: jair <jairkorthofschool-oss@users.noreply.github.com>
+Author: jair
+Section: Tweaks
+Depends: mobilesubstrate, firmware (>= 15.0)
+Description: Duo-effect bij het draaien van je scherm: het beeld vervaagt en blijft rechtop zweven. Instelbaar in Instellingen (alle apps of alleen homescreen).
+Depiction: https://jairkorthofschool-oss.github.io/duo-tweak/depiction/index.html
+SileoDepiction: https://jairkorthofschool-oss.github.io/duo-tweak/depiction/index.html
+Tag: rotation::effects, intent::status-bar

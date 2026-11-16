@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>cell</key>
+		<string>PSGroupCell</string>
+		<key>header</key>
+		<string>Duo Effect</string>
+		<key>footerText</key>
+		<string>Houd je iPhone recht voor het normale beeld. Tijdens het draaien krijg je het duo-effect: het scherm vervaagt en blijft rechtop zweven.</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSSwitchCell</string>
+		<key>label</key>
+		<string>Effect ingeschakeld</string>
+		<key>key</key>
+		<string>enabled</string>
+		<key>default</key>
+		<true/>
+		<key>defaults</key>
+		<string>nl.jair.duotweak</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSGroupCell</string>
+		<key>footerText</key>
+		<string>Als dit uit staat werkt het effect alleen op je homescreen.</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSSwitchCell</string>
+		<key>label</key>
+		<string>Gebruiken in alle apps</string>
+		<key>key</key>
+		<string>allapps</string>
+		<key>default</key>
+		<false/>
+		<key>defaults</key>
+		<string>nl.jair.duotweak</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSGroupCell</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSSwitchCell</string>
+		<key>label</key>
+		<string>Zwevend scherm (krimpen)</string>
+		<key>key</key>
+		<string>shrink</string>
+		<key>default</key>
+		<true/>
+		<key>defaults</key>
+		<string>nl.jair.duotweak</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSGroupCell</string>
+		<key>footerText</key>
+		<string>Duo Tweak 1.0.0 - gemaakt door jairkorthofschool-oss</string>
+	</dict>
+</array>
+</plist>

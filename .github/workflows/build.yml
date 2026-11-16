@@ -1,0 +1,79 @@
+name: Build tweak & deploy Sileo repo
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ldid fakeroot dpkg-dev bzip2 perl unzip
+
+      - name: Setup Theos
+        run: |
+          git clone --recursive --depth 1 https://github.com/theos/theos.git "$HOME/theos"
+          curl -L "https://github.com/theos/sdks/archive/refs/heads/master.zip" -o /tmp/sdks.zip
+          unzip -q /tmp/sdks.zip -d /tmp
+          SDK_DIR=$(ls -d /tmp/sdks-master/iPhoneOS*.sdk | sort -V | tail -1)
+          echo "Using SDK: $SDK_DIR"
+          mkdir -p "$HOME/theos/sdks"
+          mv "$SDK_DIR" "$HOME/theos/sdks/"
+          SDK_VER=$(basename "$SDK_DIR" .sdk | sed 's/iPhoneOS//')
+          echo "SDK_VER=$SDK_VER" >> "$GITHUB_ENV"
+
+      - name: Build package
+        env:
+          THEOS: /home/runner/theos
+        run: |
+          cd duo
+          make package FINALPACKAGE=1 SDKVER=$SDK_VER
+          mkdir -p ../repo/debs
+          cp packages/*.deb ../repo/debs/
+          ls -la ../repo/debs
+
+      - name: Build APT repo metadata
+        run: |
+          cd repo
+          dpkg-scanpackages --multiversion debs > Packages
+          gzip -9fn -k Packages
+          bzip2 -9fn -k Packages
+          bash ../scripts/gen-release.sh > Release
+          ls -la
+
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          cp -r repo/. site/
+          cp -r web/. site/
+          ls -la site
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
