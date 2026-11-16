@@ -1,7 +1,10 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <CoreMotion/CoreMotion.h>
 
 #define PREF_DOMAIN CFSTR("nl.jair.duotweak")
+#define TILT_ON_DEG 22.0
+#define TILT_OFF_DEG 10.0
 
 static BOOL cfgEnabled = YES;
 static BOOL cfgAllApps = NO;
@@ -31,8 +34,18 @@ static BOOL EffectActive(void) {
 	return cfgAllApps || IsSpringBoard();
 }
 
+static UIApplication *SharedApp(void) {
+	@try {
+		return [UIApplication sharedApplication];
+	} @catch (NSException *e) {
+		return nil;
+	}
+}
+
 static UIWindow *KeyWindow(void) {
-	UIApplication *app = [UIApplication sharedApplication];
+	UIApplication *app = SharedApp();
+	if (!app) return nil;
+
 	UIWindow *win = nil;
 
 	for (UIScene *scene in app.connectedScenes) {
@@ -61,37 +74,66 @@ static UIWindow *KeyWindow(void) {
 }
 
 @interface DuoEffectRunner : NSObject
-+ (void)trigger;
++ (void)boot;
 @end
 
 @implementation DuoEffectRunner
 
-static CADisplayLink *gLink = nil;
+static CMMotionManager *gMotion = nil;
 static UIView *gContainer = nil;
+static BOOL gSession = NO;
 
-+ (void)cancel {
-	[gLink invalidate];
-	gLink = nil;
-	[gContainer removeFromSuperview];
-	gContainer = nil;
++ (void)boot {
+	UIApplication *app = SharedApp();
+	if (!app) return;
+
+	[[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidEnterBackgroundNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+		[DuoEffectRunner endSession];
+	}];
+
+	CMMotionManager *motion = [[CMMotionManager alloc] init];
+	motion.deviceMotionUpdateInterval = 1.0 / 60.0;
+	[motion startDeviceMotionUpdatesToQueue:[NSOperationQueue mainQueue] withHandler:^(CMDeviceMotion *m, NSError *err) {
+		if (!err) {
+			[DuoEffectRunner handleMotion:m];
+		}
+	}];
+	gMotion = motion;
 }
 
-+ (void)poll:(CADisplayLink *)link {
-	if (!gContainer) return;
-	UIWindow *w = gContainer.window;
-	if (!w) return;
-	CATransform3D t = w.layer.transform;
-	CGFloat angle = atan2(t.m21, t.m11);
-	gContainer.transform = CGAffineTransformMakeRotation(-angle);
++ (void)handleMotion:(CMDeviceMotion *)motion {
+	CGVector g = motion.gravity;
+	CGFloat angle = atan2(g.x, -g.y);
+	CGFloat deg = fabs(angle) * 180.0 / M_PI;
+
+	if (gSession) {
+		if (deg < TILT_OFF_DEG || !EffectActive()) {
+			[self endSession];
+			return;
+		}
+		if (!gContainer || !gContainer.window) {
+			gSession = NO;
+			[gContainer removeFromSuperview];
+			gContainer = nil;
+			if (deg < TILT_ON_DEG) return;
+		} else {
+			gContainer.transform = CGAffineTransformMakeRotation(angle);
+			return;
+		}
+	}
+
+	if (!EffectActive()) return;
+	if (deg > TILT_ON_DEG) {
+		[self beginSessionWithAngle:angle];
+	}
 }
 
-+ (void)trigger {
++ (void)beginSessionWithAngle:(CGFloat)angle {
+	ReloadPrefs();
 	if (!EffectActive()) return;
 
 	UIWindow *window = KeyWindow();
 	if (!window) return;
-
-	[self cancel];
 
 	UIView *snap = [window snapshotViewAfterScreenUpdates:NO];
 	if (!snap) return;
@@ -102,6 +144,7 @@ static UIView *gContainer = nil;
 	UIView *container = [[UIView alloc] initWithFrame:CGRectMake(0, 0, bw, bh)];
 	container.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	container.userInteractionEnabled = NO;
+	container.transform = CGAffineTransformMakeRotation(angle);
 
 	UIView *bg = [window snapshotViewAfterScreenUpdates:NO];
 	bg.frame = CGRectMake(0, 0, bw, bh);
@@ -136,52 +179,39 @@ static UIView *gContainer = nil;
 	[container addSubview:wrap];
 	[window addSubview:container];
 	gContainer = container;
+	gSession = YES;
 
-	UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial];
-	[UIView animateWithDuration:0.15 delay:0 options:UIViewAnimationOptionCurveEaseOut | UIViewAnimationOptionBeginFromCurrentState animations:^{
-		blur.effect = effect;
+	[UIView animateWithDuration:0.18 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+		blur.effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial];
 	} completion:nil];
 
-	if (cfgShrink) {
-		[UIView animateWithDuration:0.28 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
-			wrap.frame = CGRectMake(bw * 0.05, bh * 0.05, bw * 0.9, bh * 0.9);
-			wrap.layer.cornerRadius = 40;
-			wrap.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, bw * 0.9, bh * 0.9) cornerRadius:40].CGPath;
-		} completion:nil];
-	}
+	CGFloat s = cfgShrink ? 0.9 : 1.0;
+	CGFloat tw = bw * s;
+	CGFloat th = bh * s;
+	[UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+		wrap.frame = CGRectMake((bw - tw) / 2.0, (bh - th) / 2.0, tw, th);
+		wrap.layer.cornerRadius = 40;
+		wrap.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, tw, th) cornerRadius:40].CGPath;
+	} completion:nil];
+}
 
-	gLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(poll:)];
-	[gLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
-
-	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.65 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-		if (gContainer != container) return;
-		[UIView animateWithDuration:0.3 animations:^{
-			container.alpha = 0.0;
-		} completion:^(BOOL finished) {
-			if (gContainer == container) {
-				[self cancel];
-			}
-		}];
-	});
++ (void)endSession {
+	if (!gSession) return;
+	gSession = NO;
+	UIView *container = gContainer;
+	gContainer = nil;
+	if (!container) return;
+	[UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionCurveEaseIn animations:^{
+		container.alpha = 0.0;
+	} completion:^(BOOL finished) {
+		[container removeFromSuperview];
+	}];
 }
 
 @end
 
 %ctor {
 	@autoreleasepool {
-		ReloadPrefs();
-
-		[[NSNotificationCenter defaultCenter] addObserverForName:@"UIApplicationDidChangeStatusBarOrientationNotification" object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
-			[DuoEffectRunner trigger];
-		}];
-
-		__block UIInterfaceOrientation last = [[UIApplication sharedApplication] statusBarOrientation];
-		[[NSNotificationCenter defaultCenter] addObserverForName:@"UIDeviceOrientationDidChangeNotification" object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
-			UIInterfaceOrientation cur = [[UIApplication sharedApplication] statusBarOrientation];
-			if (cur != last && cur != UIInterfaceOrientationUnknown) {
-				last = cur;
-				[DuoEffectRunner trigger];
-			}
-		}];
+		[DuoEffectRunner boot];
 	}
 }
