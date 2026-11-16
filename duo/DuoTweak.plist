@@ -11,6 +11,7 @@
 			<string>com.apple.springboard</string>
 			<string>com.apple.UIKit</string>
 			<string>com.apple.Security</string>
+			<string>com.apple.Preferences</string>
 		</array>
 		<key>Executables</key>
 		<array>
