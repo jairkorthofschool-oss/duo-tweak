@@ -13,8 +13,7 @@
 		_specifiers = [self loadSpecifiersFromPlistName:@"Root" target:self];
 
 		NSString *diag = [self diagnoseText];
-		PSSpecifier *group = [[PSSpecifier alloc] initWithType:PSGroupCell];
-		[group setProperty:@"Diagnose (automatisch)" forKey:@"label"];
+		PSSpecifier *group = [PSSpecifier groupSpecifierWithName:@"Diagnose (automatisch)"];
 		[group setProperty:diag forKey:@"footerText"];
 
 		NSMutableArray *specs = [_specifiers mutableCopy];
