@@ -21,6 +21,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache previous debs
+        uses: actions/cache@v4
+        with:
+          path: repo/debs
+          key: debs-${{ github.sha }}
+          restore-keys: |
+            debs-
+
       - name: Install build dependencies
         run: |
           sudo apt-get update
