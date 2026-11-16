@@ -4,12 +4,13 @@
 #import <QuartzCore/QuartzCore.h>
 
 #define PREF_DOMAIN CFSTR("nl.jair.duotweak")
-#define TILT_ON_DEG 8.0
+#define TILT_ON_DEG 6.0
 #define TILT_OFF_DEG 4.0
-#define EFFECT_STRENGTH 5.0
+#define TILT_MAX_DEG 150.0
 
 static BOOL cfgEnabled = YES;
 static BOOL cfgAllApps = NO;
+static float cfgStrength = 5.0;
 static BOOL gTilted = NO;
 
 static BOOL ReadBool(CFStringRef key, BOOL fallback) {
@@ -20,10 +21,21 @@ static BOOL ReadBool(CFStringRef key, BOOL fallback) {
 	return r;
 }
 
+static float ReadFloat(CFStringRef key, float fallback) {
+	CFTypeRef v = CFPreferencesCopyAppValue(key, PREF_DOMAIN);
+	if (!v) return fallback;
+	float r = [(__bridge id)v floatValue];
+	CFRelease(v);
+	return r;
+}
+
 static void ReloadPrefs(void) {
 	CFPreferencesAppSynchronize(PREF_DOMAIN);
 	cfgEnabled = ReadBool(CFSTR("enabled"), YES);
 	cfgAllApps = ReadBool(CFSTR("allapps"), NO);
+	cfgStrength = ReadFloat(CFSTR("strength"), 5.0);
+	if (cfgStrength < 0.0) cfgStrength = 0.0;
+	if (cfgStrength > 10.0) cfgStrength = 10.0;
 }
 
 static BOOL IsSpringBoard(void) {
@@ -135,18 +147,31 @@ static CMMotionManager *gMotion = nil;
 	if (!gTilted && deg < TILT_ON_DEG) return;
 	gTilted = YES;
 
+	static CFAbsoluteTime lastReload = 0;
+	CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+	if (now - lastReload > 0.5) {
+		ReloadPrefs();
+		lastReload = now;
+	}
+
 	UIWindow *w = BestWindow();
 	if (!w) return;
 
 	CGFloat bh = w.bounds.size.height;
+	CGFloat rot = -theta * cfgStrength;
+	if (rot > TILT_MAX_DEG * M_PI / 180.0) rot = TILT_MAX_DEG * M_PI / 180.0;
+	if (rot < -TILT_MAX_DEG * M_PI / 180.0) rot = -TILT_MAX_DEG * M_PI / 180.0;
 
 	CATransform3D t = CATransform3DIdentity;
 	t = CATransform3DTranslate(t, 0, bh / 2.0, 0);
-	t.m34 = -1.0 / 700.0;
-	t = CATransform3DRotate(t, -theta * EFFECT_STRENGTH, 1.0, 0.0, 0.0);
+	t.m34 = -1.0 / 250.0;
+	t = CATransform3DRotate(t, rot, 1.0, 0.0, 0.0);
 	t = CATransform3DTranslate(t, 0, -bh / 2.0, 0);
 
+	[CATransaction begin];
+	[CATransaction setDisableActions:YES];
 	w.layer.transform = t;
+	[CATransaction commit];
 }
 
 @end

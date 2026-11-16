@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <stdlib.h>
 #import <Preferences/PSListController.h>
 #import <Preferences/PSSpecifier.h>
 
@@ -60,6 +61,12 @@
 	}
 
 	return m;
+}
+
+- (void)doRespring:(PSSpecifier *)spec {
+	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.4 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+		system("killall SpringBoard");
+	});
 }
 
 - (NSString *)readText:(NSString *)path {

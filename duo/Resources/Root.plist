@@ -48,7 +48,43 @@
 		<key>cell</key>
 		<string>PSGroupCell</string>
 		<key>footerText</key>
-		<string>Duo Tweak 1.1.0 - gemaakt door jairkorthofschool-oss</string>
+		<string>Effect sterkte: hoe hard het beeld tegendraait bij kantelen (0 = uit, 10 = extreem).</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSSliderCell</string>
+		<key>label</key>
+		<string>Sterkte</string>
+		<key>key</key>
+		<string>strength</string>
+		<key>default</key>
+		<integer>5</integer>
+		<key>min</key>
+		<real>0</real>
+		<key>max</key>
+		<real>10</real>
+		<key>defaults</key>
+		<string>nl.jair.duotweak</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSGroupCell</string>
+		<key>footerText</key>
+		<string>Pas de instellingen aan en druk daarna op SpringBoard herstarten om ze toe te passen.</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSButtonCell</string>
+		<key>label</key>
+		<string>SpringBoard herstarten</string>
+		<key>action</key>
+		<string>doRespring:</string>
+	</dict>
+	<dict>
+		<key>cell</key>
+		<string>PSGroupCell</string>
+		<key>footerText</key>
+		<string>Duo Tweak 1.1.2 - gemaakt door jairkorthofschool-oss</string>
 	</dict>
 	</array>
 </dict>
