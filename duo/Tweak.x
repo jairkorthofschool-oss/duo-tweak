@@ -3,8 +3,8 @@
 #import <CoreMotion/CoreMotion.h>
 
 #define PREF_DOMAIN CFSTR("nl.jair.duotweak")
-#define TILT_ON_DEG 22.0
-#define TILT_OFF_DEG 10.0
+#define TILT_ON_DEG 12.0
+#define TILT_OFF_DEG 4.0
 
 static BOOL cfgEnabled = YES;
 static BOOL cfgAllApps = NO;
@@ -217,13 +217,15 @@ static BOOL gSession = NO;
 
 		[container addSubview:wrap];
 
-		CGFloat s = cfgShrink ? 0.9 : 1.0;
+		CGFloat s = cfgShrink ? 0.72 : 1.0;
 		CGFloat tw = bw * s;
 		CGFloat th = bh * s;
-		[UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+		[UIView animateWithDuration:0.3 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
 			wrap.frame = CGRectMake((bw - tw) / 2.0, (bh - th) / 2.0, tw, th);
-			wrap.layer.cornerRadius = 40;
-			wrap.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, tw, th) cornerRadius:40].CGPath;
+			wrap.layer.cornerRadius = 34;
+			wrap.layer.shadowOpacity = 0.55;
+			wrap.layer.shadowRadius = 40;
+			wrap.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, tw, th) cornerRadius:34].CGPath;
 		} completion:nil];
 	}
 
@@ -231,8 +233,8 @@ static BOOL gSession = NO;
 	gContainer = container;
 	gSession = YES;
 
-	[UIView animateWithDuration:0.18 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
-		blur.effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial];
+	[UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+		blur.effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
 	} completion:nil];
 
 	[self flash:[UIColor colorWithRed:0.1 green:0.85 blue:0.3 alpha:1.0] inWindow:overlay];
