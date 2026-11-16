@@ -82,21 +82,13 @@
 		<key>cell</key>
 		<string>PSGroupCell</string>
 		<key>footerText</key>
-		<string>Druk op diagnose en typ de tekst die je ziet over aan mij in de chat - dan weet ik precies wat er aan de hand is.</string>
-	</dict>
-	<dict>
-		<key>cell</key>
-		<string>PSButtonCell</string>
-		<key>label</key>
-		<string>Draai diagnose</string>
-		<key>action</key>
-		<string>runDiagnose:</string>
+		<string>Onderaan deze pagina staat automatisch de diagnose. Typ die tekst over aan mij in de chat - dan weet ik precies wat er aan de hand is.</string>
 	</dict>
 	<dict>
 		<key>cell</key>
 		<string>PSGroupCell</string>
 		<key>footerText</key>
-		<string>Duo Tweak 1.0.6 - gemaakt door jairkorthofschool-oss</string>
+		<string>Duo Tweak 1.0.7 - gemaakt door jairkorthofschool-oss</string>
 	</dict>
 	</array>
 </dict>
